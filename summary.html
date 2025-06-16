@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Prestart Lookup Summary</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h3 { color: #cc0000; }
+    .summary { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="summary">
+    <h3>⚠️ No prestart found for today</h3>
+    <p><strong>Asset ID:</strong> <span id="asset"></span></p>
+    <p><strong>Site:</strong> <span id="site"></span></p>
+    <p><strong>Job Number:</strong> <span id="job"></span></p>
+    <p><strong>Last Prestart:</strong> <span id="date"></span></p>
+    <p>
+      <a id="link" href="#" target="_blank">📝 Fill today's Prestart</a>
+    </p>
+  </div>
+
+  <script>
+    const q = new URLSearchParams(window.location.search);
+    document.getElementById('asset').textContent = q.get('asset');
+    document.getElementById('site').textContent = q.get('site');
+    document.getElementById('job').textContent = q.get('job');
+    document.getElementById('date').textContent = q.get('date');
+    document.getElementById('link').href = `https://www.jotform.com/form/1234567890?assetID=${q.get('asset')}&date=${q.get('today')}`;
+  </script>
+</body>
+</html>
