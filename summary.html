@@ -2,14 +2,47 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Prestart Lookup Summary</title>
+  <title>Vehicle Prestart Summary</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    h3 { color: #cc0000; }
-    .summary { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+    body {{
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      color: #222;
+      margin: 0;
+      padding: 20px;
+    }}
+    .header {{
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }}
+    .header img {{
+      height: 80px;
+      margin-right: 15px;
+    }}
+    .summary {{
+      background: #f9f9f9;
+      border-left: 6px solid #d00000;
+      padding: 20px;
+      border-radius: 6px;
+    }}
+    h3 {{
+      color: #d00000;
+    }}
+    footer {{
+      margin-top: 40px;
+      font-size: 0.85em;
+      color: #666;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+    }}
   </style>
 </head>
 <body>
+  <div class="header">
+    <img src="TRA_logo.png" alt="TRA Logo">
+    <h2>Tasmea Vehicle Prestart Summary</h2>
+  </div>
   <div class="summary">
     <h3>⚠️ No prestart found for today</h3>
     <p><strong>Asset ID:</strong> <span id="asset"></span></p>
@@ -20,14 +53,16 @@
       <a id="link" href="#" target="_blank">📝 Fill today's Prestart</a>
     </p>
   </div>
-
+  <footer>
+    Powered by Tasmea · v1.0 · 2025
+  </footer>
   <script>
     const q = new URLSearchParams(window.location.search);
-    document.getElementById('asset').textContent = q.get('asset');
-    document.getElementById('site').textContent = q.get('site');
-    document.getElementById('job').textContent = q.get('job');
-    document.getElementById('date').textContent = q.get('date');
-    document.getElementById('link').href = `https://tasmea.jotform.com/251106116750951?assetID=${q.get('asset')}&date=${q.get('today')}`;
+    document.getElementById('asset').textContent = q.get('asset') || '-';
+    document.getElementById('site').textContent = q.get('site') || '-';
+    document.getElementById('job').textContent = q.get('job') || '-';
+    document.getElementById('date').textContent = q.get('date') || '-';
+    document.getElementById('link').href = "https://www.jotform.com/form/1234567890?assetID=" + q.get('asset') + "&date=" + q.get('today');
   </script>
 </body>
 </html>
