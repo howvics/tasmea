@@ -44,7 +44,7 @@
     <h2>Tasmea Vehicle Prestart Summary</h2>
   </div>
   <div class="summary">
-    <h3>⚠️ No prestart found for today</h3>
+    <h3>No prestart found for today</h3>
     <p><strong>Asset ID:</strong> <span id="asset"></span></p>
     <p><strong>Site:</strong> <span id="site"></span></p>
     <p><strong>Job Number:</strong> <span id="job"></span></p>
@@ -62,7 +62,7 @@
     document.getElementById('site').textContent = q.get('site') || '-';
     document.getElementById('job').textContent = q.get('job') || '-';
     document.getElementById('date').textContent = q.get('date') || '-';
-    document.getElementById('link').href = "https://www.jotform.com/form/1234567890?assetID=" + q.get('asset') + "&date=" + q.get('today');
+    document.getElementById('link').href = "https://tasmea.jotform.com/251106116750951?assetID=" + q.get('asset') + "&date=" + q.get('today');
   </script>
 </body>
 </html>
