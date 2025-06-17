@@ -4,57 +4,76 @@
   <meta charset="utf-8" />
   <title>Vehicle Prestart Summary</title>
   <style>
-    body {{
+    body {
       font-family: Arial, sans-serif;
-      background-color: #fff;
+      background-color: #f0f2f5;
       color: #222;
       margin: 0;
-      padding: 20px;
-    }}
-    .header {{
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
       display: flex;
       align-items: center;
       margin-bottom: 20px;
-    }}
-    .header img {{
+    }
+    .header img {
       height: 80px;
       margin-right: 15px;
-    }}
-    .summary {{
-      background: #f9f9f9;
-      border-left: 6px solid #d00000;
-      padding: 20px;
-      border-radius: 6px;
-    }}
-    h3 {{
+    }
+    .container {
+      background: #ffffff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    h3 {
       color: #d00000;
-    }}
-    footer {{
-      margin-top: 40px;
-      font-size: 0.85em;
-      color: #666;
-      border-top: 1px solid #ddd;
-      padding-top: 10px;
-    }}
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #d00000;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    footer {
+      margin-top: 50px;
+      font-size: 0.75em;
+      color: #888;
+      text-align: right;
+      width: 100%;
+      max-width: 600px;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <img src="TRA_logo.png" alt="TRA Logo">
-    <h2>Tasmea Vehicle Prestart Summary</h2>
+    <h2>Tasman Rope Access<br>Vehicle Prestart Summary</h2>
   </div>
-  <div class="summary">
+  <div class="container">
     <h3>No prestart found for today</h3>
     <p><strong>Asset ID:</strong> <span id="asset"></span></p>
     <p><strong>Site:</strong> <span id="site"></span></p>
     <p><strong>Job Number:</strong> <span id="job"></span></p>
     <p><strong>Last Prestart:</strong> <span id="date"></span></p>
-    <p>
-      <a id="link" href="#" target="_blank">📝 Fill today's Prestart</a>
-    </p>
+    <a id="link" href="#" target="_blank">Fill today's Prestart</a>
   </div>
   <footer>
-    Powered by Tasmea · v1.0 · 2025
+    Powered by Tasman Rope Access · v1.4.0.4 · 2025
   </footer>
   <script>
     const q = new URLSearchParams(window.location.search);
@@ -62,7 +81,7 @@
     document.getElementById('site').textContent = q.get('site') || '-';
     document.getElementById('job').textContent = q.get('job') || '-';
     document.getElementById('date').textContent = q.get('date') || '-';
-    document.getElementById('link').href = "https://tasmea.jotform.com/251106116750951?assetID=" + q.get('asset') + "&date=" + q.get('today');
+    document.getElementById('link').href = "https://www.jotform.com/form/1234567890?assetID=" + q.get('asset') + "&date=" + q.get('today');
   </script>
 </body>
 </html>
