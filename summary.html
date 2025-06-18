@@ -1,151 +1,140 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Vehicle Prestart Summary</title>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vehicle Prestart Summary</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      color: #222;
       margin: 0;
-      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      min-height: 100vh;
     }
-    .header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .header img {
-      height: 80px;
-      margin-bottom: 10px;
-    }
+
     .container {
-      background: #ffffff;
-      padding: 25px 30px;
-      border-radius: 10px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-      width: 100%;
       max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
       text-align: center;
     }
-    h3 {
-      color: #d00000;
-      margin-bottom: 20px;
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #222;
     }
-    p {
-      font-size: 16px;
-      margin: 10px 0;
-    }
-    a {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 10px 20px;
-      background: #d00000;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
+
+    .faults {
       text-align: left;
+      margin-top: 20px;
+      font-size: 16px;
     }
-    th {
-      background: #eee;
+
+    .fault {
+      color: red;
+      font-weight: bold;
     }
-    footer {
-      margin-top: 40px;
-      font-size: 0.75em;
-      color: #888;
+
+    .footer {
+      margin-top: auto;
+      font-size: 12px;
       text-align: right;
-      width: 100%;
-      max-width: 600px;
+      padding: 10px 20px;
+      color: #888;
     }
-    @media screen and (max-width: 600px) {
+
+    img.logo {
+      width: 150px;
+      margin-bottom: 15px;
+    }
+
+    .button-container {
+      margin-top: 20px;
+    }
+
+    .button-container a {
+      background-color: #d71920;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    @media (max-width: 640px) {
       .container {
-        padding: 20px;
+        margin: 20px;
+      }
+
+      img.logo {
+        width: 120px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="TRA_logo.png" alt="TRA Logo">
-    <h2>Tasman Rope Access<br>Vehicle Prestart Summary</h2>
-  </div>
   <div class="container">
-    <h3>No prestart found for today</h3>
-    <p><strong>Asset ID:</strong> <span id="asset"></span></p>
-    <p><strong>Site:</strong> <span id="site"></span></p>
-    <p><strong>Job Number:</strong> <span id="job"></span></p>
-    <p><strong>Last Prestart:</strong> <span id="dateSummary"></span></p>
-
-    <table>
-      <thead>
-        <tr><th>Check Item</th><th>Status</th></tr>
-      </thead>
-      <tbody id="faultsTable"></tbody>
-    </table>
-
-    <a id="link" href="#" target="_blank">Fill today's Prestart</a>
+    <img class="logo" src="https://howvics.github.io/tasmea/TRA_logo.png" alt="Tasman Rope Access Logo" />
+    <h1 id="summary-title">Fetching summary...</h1>
+    <div class="faults" id="summary-body"></div>
+    <div class="button-container" id="button-container" style="display: none;">
+      <a id="start-prestart" href="#" target="_blank">Start Prestart</a>
+    </div>
   </div>
-  <footer>
-    Powered by Tasman Rope Access · v1.4.0.4 · 2025
-  </footer>
+  <div class="footer">Powered by Tasman Rope Access v1.4.0.4 – 2025</div>
+
   <script>
-    const q = new URLSearchParams(window.location.search);
-    document.getElementById('asset').textContent = q.get('asset') || '-';
-    document.getElementById('site').textContent = q.get('site') || '-';
-    document.getElementById('job').textContent = q.get('job') || '-';
-    document.getElementById('link').href = "https://www.jotform.com/form/1234567890?assetID=" + q.get('asset') + "&date=" + q.get('today');
+    async function fetchSummary() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const assetID = urlParams.get("asset");
+      const date = urlParams.get("date");
 
-    const checks = [
-      "brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"
-    ];
-    const labels = {
-      brakes: "Brakes",
-      lights: "Lights",
-      horn: "Horn",
-      tyres: "Tyres",
-      engine: "Engine Leaks",
-      interior: "Interior",
-      radio: "2-Way Radio",
-      safety: "Safety Equipment",
-      windscreen: "Windscreen",
-      docs: "Documentation"
-    };
-
-    const faultTable = document.getElementById('faultsTable');
-    let faultCount = 0;
-    checks.forEach(key => {
-      const val = q.get(key);
-      if (val !== null) {
-        const lower = val.toLowerCase();
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${labels[key]}</td><td>${val}</td>`;
-        faultTable.appendChild(row);
-        if (lower.includes("fault") || lower.includes("worn") || lower.includes("crack") || lower.includes("leak") || lower.includes("missing")) {
-          row.children[1].style.color = "#d00000";
-          row.children[1].style.fontWeight = "bold";
-          faultCount++;
-        }
+      if (!assetID || !date) {
+        document.getElementById("summary-title").innerText = "Invalid parameters.";
+        return;
       }
-    });
 
-    const date = q.get('date') || '-';
-    document.getElementById('dateSummary').textContent = faultCount > 0 ? `${date} with ${faultCount} fault${faultCount > 1 ? 's' : ''}` : date;
+      const response = await fetch("https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": "8438efad-daef-4555-b089-d7a58e5ecf7b"
+        },
+        body: JSON.stringify({ assetID: assetID, date: date })
+      });
+
+      const data = await response.json();
+      const summary = data.summaryText || "No data received.";
+      const lines = summary.split('\n');
+
+      let faultCount = 0;
+      const body = lines.map(line => {
+        if (line.toLowerCase().includes("fault")) {
+          faultCount++;
+          return `<div class="fault">${line}</div>`;
+        } else {
+          return `<div>${line}</div>`;
+        }
+      }).join("");
+
+      document.getElementById("summary-title").innerText = lines[0] || "Summary";
+      document.getElementById("summary-body").innerHTML = body;
+
+      if (summary.includes("No prestart filled")) {
+        document.getElementById("button-container").style.display = "block";
+        document.getElementById("start-prestart").href = `https://form.jotform.com/your-form-id?typeAsset=${assetID}`;
+      }
+    }
+
+    fetchSummary();
   </script>
 </body>
 </html>
