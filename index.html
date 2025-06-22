@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle Prestart Lookup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #f0f2f5;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .container, .summary {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1rem;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      margin-top: 0;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background: #eee;
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.75em;
+      color: #888;
+      text-align: center;
+      max-width: 600px;
+    }
+    img.logo {
+      width: 80px;
+      margin: 1rem 0;
+    }
+    @media screen and (max-width: 600px) {
+      .container, .summary {
+        padding: 1rem;
+      }
+      input, button {
+        font-size: 1rem;
+        padding: 0.6rem;
+      }
+      h1, h2 {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <img src="TRA_logo.png" alt="Logo" class="logo">
+  <div class="container" id="lookupForm">
+    <h1>Vehicle Prestart Lookup</h1>
+    <input type="text" id="assetId" placeholder="Enter Asset ID" required>
+    <button onclick="checkPrestart()">Submit</button>
+    <div id="error" class="highlight"></div>
+  </div>
+
+  <div class="summary" id="summarySection" style="display:none">
+    <h2>Prestart Summary</h2>
+    <p><strong>Asset ID:</strong> <span id="asset"></span></p>
+    <p><strong>Site:</strong> <span id="site"></span></p>
+    <p><strong>Job Number:</strong> <span id="job"></span></p>
+    <p><strong>Last Prestart:</strong> <span id="dateSummary"></span></p>
+
+    <table>
+      <thead>
+        <tr><th>Check Item</th><th>Status</th></tr>
+      </thead>
+      <tbody id="faultsTable"></tbody>
+    </table>
+
+    <a id="link" href="#" target="_blank"><button>Fill Today’s Prestart</button></a>
+  </div>
+
+  <footer>
+    Powered by Tasman Rope Access · v1.4.0.4 · 2025
+  </footer>
+
+  <script>
+    const query = new URLSearchParams(window.location.search);
+    const prefillAsset = query.get('assetID') || '';
+
+    document.getElementById('assetId').value = prefillAsset;
+
+    const endpoint = "https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU";
+
+    function checkPrestart() {
+      const asset = document.getElementById('assetId').value.trim();
+      const errorBox = document.getElementById('error');
+      const summary = document.getElementById('summarySection');
+
+      if (!asset) {
+        errorBox.textContent = "Please enter Asset ID.";
+        return;
+      }
+
+      errorBox.textContent = "";
+
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": "8438efad-daef-4555-b089-d7a58e5ecf7b" },
+        body: JSON.stringify({ assetID: asset })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('lookupForm').style.display = 'none';
+        summary.style.display = 'block';
+
+        document.getElementById('asset').textContent = asset;
+        document.getElementById('site').textContent = data.site || '-';
+        document.getElementById('job').textContent = data.job || '-';
+        document.getElementById('dateSummary').textContent = data.lastPrestart ? `${data.lastPrestart.date} with ${data.lastPrestart.faults} fault(s)` : '-';
+        document.getElementById('link').href = data.prestartFormLink || '#';
+
+        const checks = ["brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"];
+        const labels = {
+          brakes: "Brakes",
+          lights: "Lights",
+          horn: "Horn",
+          tyres: "Tyres",
+          engine: "Engine Leaks",
+          interior: "Interior",
+          radio: "2-Way Radio",
+          safety: "Safety Equipment",
+          windscreen: "Windscreen",
+          docs: "Documentation"
+        };
+
+        const faultTable = document.getElementById('faultsTable');
+        faultTable.innerHTML = '';
+
+        if (data.checks) {
+          checks.forEach(key => {
+            if (key in data.checks) {
+              const val = data.checks[key];
+              const lower = val.toLowerCase();
+              const row = document.createElement('tr');
+              row.innerHTML = `<td>${labels[key]}</td><td>${val}</td>`;
+              if (["fault", "worn", "crack", "leak", "missing"].some(term => lower.includes(term))) {
+                row.children[1].style.color = "#d00000";
+                row.children[1].style.fontWeight = "bold";
+              }
+              faultTable.appendChild(row);
+            }
+          });
+        } else {
+          faultTable.innerHTML = '<tr><td colspan="2">No check data available.</td></tr>';
+        }
+      })
+      .catch(err => {
+        errorBox.textContent = "Error fetching data. Please try again.";
+        console.error(err);
+      });
+    }
+  
+    // Automatically run lookup if assetID is present in URL
+    if (prefillAsset) {
+      checkPrestart();
+    }
+
+    // Show loading spinner
+    function showSpinner(show) {
+      if (show) {
+        document.body.insertAdjacentHTML('beforeend', '<div id="spinner" style="position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(255,255,255,0.8);z-index:9999;display:flex;justify-content:center;align-items:center;"><div style="border:6px solid #f3f3f3;border-top:6px solid #007bff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div></div>');
+      } else {
+        const spinner = document.getElementById('spinner');
+        if (spinner) spinner.remove();
+      }
+    }
+
+    // Add retry button
+    function showRetryButton() {
+      const errorBox = document.getElementById('error');
+      const retryBtn = document.createElement('button');
+      retryBtn.textContent = "Retry";
+      retryBtn.onclick = () => {
+        errorBox.textContent = "";
+        checkPrestart();
+      };
+      errorBox.appendChild(document.createElement("br"));
+      errorBox.appendChild(retryBtn);
+    }
+
+    // Insert spinner animation CSS
+    const style = document.createElement('style');
+    style.innerHTML = "@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}";
+    document.head.appendChild(style);
+
+    // Enhance checkPrestart with spinner and retry logic
+    const originalCheckPrestart = checkPrestart;
+    checkPrestart = function () {
+      showSpinner(true);
+      try {
+        originalCheckPrestart();
+      } catch (e) {
+        console.error(e);
+        showRetryButton();
+      } finally {
+        setTimeout(() => showSpinner(false), 10000);
+      }
+    };
+    </script>
+</body>
+</html>
