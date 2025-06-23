@@ -116,7 +116,6 @@
   <script>
     const query = new URLSearchParams(window.location.search);
     const prefillAsset = query.get('assetID') || '';
-
     document.getElementById('assetId').value = prefillAsset;
 
     const endpoint = "https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU";
@@ -132,14 +131,16 @@
       }
 
       errorBox.textContent = "";
+      showSpinner(true);
 
       fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": "8438efad-daef-4555-b089-d7a58e5ecf7b" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assetID: asset })
       })
       .then(res => res.json())
       .then(data => {
+        showSpinner(false);
         document.getElementById('lookupForm').style.display = 'none';
         summary.style.display = 'block';
 
@@ -151,21 +152,13 @@
 
         const checks = ["brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"];
         const labels = {
-          brakes: "Brakes",
-          lights: "Lights",
-          horn: "Horn",
-          tyres: "Tyres",
-          engine: "Engine Leaks",
-          interior: "Interior",
-          radio: "2-Way Radio",
-          safety: "Safety Equipment",
-          windscreen: "Windscreen",
-          docs: "Documentation"
+          brakes: "Brakes", lights: "Lights", horn: "Horn", tyres: "Tyres",
+          engine: "Engine Leaks", interior: "Interior", radio: "2-Way Radio",
+          safety: "Safety Equipment", windscreen: "Windscreen", docs: "Documentation"
         };
 
         const faultTable = document.getElementById('faultsTable');
         faultTable.innerHTML = '';
-
         if (data.checks) {
           checks.forEach(key => {
             if (key in data.checks) {
@@ -185,17 +178,20 @@
         }
       })
       .catch(err => {
+        showSpinner(false);
         errorBox.textContent = "Error fetching data. Please try again.";
         console.error(err);
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = "Retry";
+        retryBtn.onclick = () => {
+          errorBox.textContent = "";
+          checkPrestart();
+        };
+        errorBox.appendChild(document.createElement("br"));
+        errorBox.appendChild(retryBtn);
       });
     }
-  
-    // Automatically run lookup if assetID is present in URL
-    if (prefillAsset) {
-      checkPrestart();
-    }
 
-    // Show loading spinner
     function showSpinner(show) {
       if (show) {
         document.body.insertAdjacentHTML('beforeend', '<div id="spinner" style="position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(255,255,255,0.8);z-index:9999;display:flex;justify-content:center;align-items:center;"><div style="border:6px solid #f3f3f3;border-top:6px solid #007bff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div></div>');
@@ -205,37 +201,13 @@
       }
     }
 
-    // Add retry button
-    function showRetryButton() {
-      const errorBox = document.getElementById('error');
-      const retryBtn = document.createElement('button');
-      retryBtn.textContent = "Retry";
-      retryBtn.onclick = () => {
-        errorBox.textContent = "";
-        checkPrestart();
-      };
-      errorBox.appendChild(document.createElement("br"));
-      errorBox.appendChild(retryBtn);
-    }
-
-    // Insert spinner animation CSS
     const style = document.createElement('style');
     style.innerHTML = "@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}";
     document.head.appendChild(style);
 
-    // Enhance checkPrestart with spinner and retry logic
-    const originalCheckPrestart = checkPrestart;
-    checkPrestart = function () {
-      showSpinner(true);
-      try {
-        originalCheckPrestart();
-      } catch (e) {
-        console.error(e);
-        showRetryButton();
-      } finally {
-        setTimeout(() => showSpinner(false), 10000);
-      }
-    };
-    </script>
+    if (prefillAsset) {
+      checkPrestart();
+    }
+  </script>
 </body>
 </html>
