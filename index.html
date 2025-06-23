@@ -98,7 +98,7 @@
     <h1>Vehicle Prestart Lookup</h1>
     <input type="text" id="assetId" placeholder="Enter Asset ID" required>
     <input type="date" id="lookupDate" style="display:none;" required>
-    <input type="time" id="lookupTime" style="display:none;">
+    <input type="time" id="lookupTime" style="display:none;" required>
     <button onclick="checkPrestart()">Submit</button>
     <div id="error" class="highlight"></div>
   </div>
@@ -136,18 +136,20 @@
 
     function checkPrestart() {
       const asset = document.getElementById('assetId').value.trim();
-// Auto-fill today's date in yyyy-MM-dd
+      let selectedDate;
+
+      // Auto-fill today's date in yyyy-MM-dd
       const today = new Date();
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
       const dd = String(today.getDate()).padStart(2, '0');
-      const date = `${yyyy}-${mm}-${dd}`;
-      document.getElementById('lookupDate').value = date;
-      const date = document.getElementById('lookupDate').value;
+      selectedDate = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('lookupDate').value = selectedDate;
+
       const errorBox = document.getElementById('error');
       const summary = document.getElementById('summarySection');
 
-      if (!asset || !date) {
+      if (!asset || !selectedDate) {
         errorBox.textContent = "Please enter Asset ID and Date.";
         return;
       }
@@ -157,7 +159,7 @@
       const minutes = now.getMinutes().toString().padStart(2, '0');
       const time = `${hours}:${minutes}`;
       document.getElementById('lookupTime').value = time;
-      const dateTime = `${date}T${time}:00+08:00`;
+      const dateTime = `${selectedDate}T${time}:00+08:00`;
 
       errorBox.textContent = "";
       showSpinner(true);
@@ -165,7 +167,7 @@
       fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetID: asset, lookupDate: date, lookupTime: time, lookupDateTime: dateTime })
+        body: JSON.stringify({ assetID: asset, lookupDate: selectedDate, lookupTime: time, lookupDateTime: dateTime })
       })
       .then(res => res.json())
       .then(data => {
