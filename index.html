@@ -97,7 +97,7 @@
   <div class="container" id="lookupForm">
     <h1>Vehicle Prestart Lookup</h1>
     <input type="text" id="assetId" placeholder="Enter Asset ID" required>
-    <input type="date" id="lookupDate" required>
+    <input type="date" id="lookupDate" style="display:none;" required>
     <input type="time" id="lookupTime" style="display:none;">
     <button onclick="checkPrestart()">Submit</button>
     <div id="error" class="highlight"></div>
@@ -136,6 +136,13 @@
 
     function checkPrestart() {
       const asset = document.getElementById('assetId').value.trim();
+// Auto-fill today's date in yyyy-MM-dd
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const date = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('lookupDate').value = date;
       const date = document.getElementById('lookupDate').value;
       const errorBox = document.getElementById('error');
       const summary = document.getElementById('summarySection');
