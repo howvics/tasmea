@@ -1,217 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Vehicle Prestart Lookup</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background: #f0f2f5;
       font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      height: 100vh;
       margin: 0;
-      padding: 20px;
     }
-    .container, .summary {
+    .container {
       background: white;
-      padding: 2rem;
+      padding: 30px 40px;
       border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 600px;
-      margin-top: 1rem;
-    }
-    h1, h2, h3 {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
       text-align: center;
-      margin-top: 0;
-    }
-    input, button {
       width: 100%;
-      padding: 0.8rem;
-      margin: 0.5rem 0;
-      border-radius: 6px;
+      max-width: 500px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      font-size: 1rem;
-      box-sizing: border-box;
     }
     button {
       background-color: #007bff;
       color: white;
       border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
       cursor: pointer;
-    }
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
-    table {
       width: 100%;
-      margin-top: 1rem;
-      border-collapse: collapse;
+      font-size: 16px;
     }
-    th, td {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
+    button:disabled {
+      background-color: #aaa;
     }
-    th {
-      background: #eee;
+    .loading {
+      display: none;
+      margin-top: 16px;
     }
-    footer {
-      margin-top: 2rem;
-      font-size: 0.75em;
+    .error {
+      color: red;
+      margin-top: 16px;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
       color: #888;
-      text-align: center;
-      max-width: 600px;
-    }
-    img.logo {
-      width: 80px;
-      margin: 1rem 0;
-    }
-    #spinner {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(255, 255, 255, 0.8);
-      z-index: 9999;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #spinner div {
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #007bff;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <img src="TRA_logo.png" alt="Logo" class="logo">
-  <div class="container" id="lookupForm">
+  <img src="TRA_logo.png" alt="Logo" style="width:100px;margin-bottom:20px;">
+  <div class="container">
     <h1>Vehicle Prestart Lookup</h1>
-    <input type="text" id="assetId" placeholder="Enter Asset ID" required>
-    <input type="date" id="lookupDate" style="display:none;" required>
-    <input type="time" id="lookupTime" style="display:none;" required>
-    <button onclick="checkPrestart()">Submit</button>
-    <div id="error" class="highlight"></div>
+    <input type="text" id="assetID" placeholder="Enter Asset ID" />
+    <button onclick="submitForm()">Submit</button>
+    <div class="loading" id="loading">Checking prestart... ⏳</div>
+    <div class="error" id="error"></div>
   </div>
-
-  <div class="summary" id="summarySection" style="display:none">
-    <h2>Prestart Summary</h2>
-    <p><strong>Asset ID:</strong> <span id="asset"></span></p>
-    <p><strong>Site:</strong> <span id="site"></span></p>
-    <p><strong>Job Number:</strong> <span id="job"></span></p>
-    <p><strong>Last Prestart:</strong> <span id="dateSummary"></span></p>
-    <table>
-      <thead>
-        <tr><th>Check Item</th><th>Status</th></tr>
-      </thead>
-      <tbody id="faultsTable"></tbody>
-    </table>
-    <a id="link" href="#" target="_blank"><button>Fill Today’s Prestart</button></a>
-  </div>
-
-  <footer>
+  <div class="footer">
     Powered by Tasman Rope Access · v1.4.0.4 · 2025
-  </footer>
-
+  </div>
   <script>
-    const endpoint = "https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU";
-
-    function showSpinner(show) {
-      if (show) {
-        document.body.insertAdjacentHTML('beforeend', '<div id="spinner"><div></div></div>');
-      } else {
-        const spinner = document.getElementById('spinner');
-        if (spinner) spinner.remove();
-      }
+    function formatDateLocal() {
+      const now = new Date();
+      now.setHours(now.getHours() + 8); // WA timezone
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     }
 
-    function checkPrestart() {
-      const asset = document.getElementById('assetId').value.trim();
-      let selectedDate;
-
-      // Auto-fill today's date in yyyy-MM-dd
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      selectedDate = `${yyyy}-${mm}-${dd}`;
-      document.getElementById('lookupDate').value = selectedDate;
-
-      const errorBox = document.getElementById('error');
-      const summary = document.getElementById('summarySection');
-
-      if (!asset || !selectedDate) {
-        errorBox.textContent = "Please enter Asset ID and Date.";
+    function submitForm() {
+      const assetID = document.getElementById('assetID').value.trim();
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = "";
+      if (!assetID) {
+        errorDiv.textContent = "Asset ID is required.";
         return;
       }
 
-      const now = new Date();
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      const time = `${hours}:${minutes}`;
-      document.getElementById('lookupTime').value = time;
-      const dateTime = `${selectedDate}T${time}:00+08:00`;
+      const date = formatDateLocal();
+      const data = {
+        asset: assetID,
+        date: date
+      };
+      console.log("Sending to Flow:", data);
+      loading.style.display = "block";
 
-      errorBox.textContent = "";
-      showSpinner(true);
-
-      fetch(endpoint, {
+      fetch("https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetID: asset, lookupDate: selectedDate, lookupTime: time, lookupDateTime: dateTime })
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
       })
-      .then(res => res.json())
-      .then(data => {
-        showSpinner(false);
-        document.getElementById('lookupForm').style.display = 'none';
-        summary.style.display = 'block';
-
-        document.getElementById('asset').textContent = asset;
-        document.getElementById('site').textContent = data.site || '-';
-        document.getElementById('job').textContent = data.job || '-';
-        document.getElementById('dateSummary').textContent = data.lastPrestart ? `${data.lastPrestart.date} with ${data.lastPrestart.faults} fault(s)` : '-';
-        document.getElementById('link').href = data.prestartFormLink || '#';
-
-        const checks = ["brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"];
-        const labels = {
-          brakes: "Brakes", lights: "Lights", horn: "Horn", tyres: "Tyres",
-          engine: "Engine Leaks", interior: "Interior", radio: "2-Way Radio",
-          safety: "Safety Equipment", windscreen: "Windscreen", docs: "Documentation"
-        };
-
-        const faultTable = document.getElementById('faultsTable');
-        faultTable.innerHTML = '';
-        if (data.checks) {
-          checks.forEach(key => {
-            if (key in data.checks) {
-              const val = data.checks[key];
-              const lower = val.toLowerCase();
-              const row = document.createElement('tr');
-              row.innerHTML = `<td>${labels[key]}</td><td>${val}</td>`;
-              if (["fault", "worn", "crack", "leak", "missing"].some(term => lower.includes(term))) {
-                row.children[1].style.color = "#d00000";
-                row.children[1].style.fontWeight = "bold";
-              }
-              faultTable.appendChild(row);
-            }
-          });
-        } else {
-          faultTable.innerHTML = '<tr><td colspan="2">No check data available.</td></tr>';
+      .then(res => {
+        loading.style.display = "none";
+        if (!res.ok) {
+          throw new Error("Flow call failed");
         }
+        return res.json();
+      })
+      .then(result => {
+        console.log("Flow result:", result);
+        alert("Lookup complete. Check console or extend logic to display results.");
       })
       .catch(err => {
-        showSpinner(false);
-        errorBox.textContent = "Error fetching data. Please try again.";
-        console.error(err);
+        loading.style.display = "none";
+        errorDiv.textContent = "Error fetching data. Please try again.";
+        console.error("Fetch error:", err);
       });
     }
   </script>
