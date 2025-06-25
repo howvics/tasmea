@@ -1,131 +1,198 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Vehicle Prestart Lookup</title>
+  <title>Asset Prestart Lookup</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f7fa;
       margin: 0;
+      padding: 0;
     }
     .container {
-      background: white;
-      padding: 30px 40px;
+      max-width: 750px;
+      margin: 60px auto;
+      background: #ffffff;
+      padding: 40px;
       border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 100%;
-      max-width: 500px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
-    h1 {
-      margin-bottom: 20px;
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      max-height: 80px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #003366;
+      text-align: center;
     }
     input[type="text"] {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 20px;
       border: 1px solid #ccc;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 12px 20px;
       border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
       font-size: 16px;
     }
-    button:disabled {
-      background-color: #aaa;
+    button {
+      padding: 12px 22px;
+      background: #007b8f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
     }
-    .loading {
+    button:hover {
+      background: #005f6b;
+    }
+    #loader {
       display: none;
-      margin-top: 16px;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #007b8f;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
-    .error {
-      color: red;
-      margin-top: 16px;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
-    .footer {
+    .message {
       margin-top: 20px;
-      font-size: 12px;
-      color: #888;
+      font-weight: 500;
+      color: #003366;
+    }
+    .response-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+    }
+    .response-table th {
+      background-color: #d1e7f0;
+      text-align: left;
+      padding: 10px;
+    }
+    .response-table td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .response-table td.label-cell {
+      background-color: #f1f9fc;
+      font-weight: bold;
+    }
+    .response-table td.value-cell {
+      background-color: #ffffff;
+    }
+    .prestart-button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #28a745;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .prestart-button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
 <body>
-  <img src="TRA_logo.png" alt="Logo" style="width:100px;margin-bottom:20px;">
   <div class="container">
-    <h1>Vehicle Prestart Lookup</h1>
-    <input type="text" id="assetID" placeholder="Enter Asset ID" />
+    <img src="TASMEA_logo.png" alt="Company Logo" class="logo" />
+    <h2>Asset Prestart Lookup</h2>
+    <input type="text" id="assetId" placeholder="Enter Asset ID" />
     <button onclick="submitForm()">Submit</button>
-    <div class="loading" id="loading">Checking prestart... ⏳</div>
-    <div class="error" id="error"></div>
+    <div id="loader"></div>
+    <div id="message" class="message"></div>
+    <div id="result"></div>
   </div>
-  <div class="footer">
-    Powered by Tasman Rope Access · v1.4.0.4 · 2025
-  </div>
-  <script>
-    function formatDateLocal() {
-      const now = new Date();
-      now.setHours(now.getHours() + 8); // WA timezone
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
 
-    function submitForm() {
-      const assetID = document.getElementById('assetID').value.trim();
-      const loading = document.getElementById('loading');
-      const errorDiv = document.getElementById('error');
-      errorDiv.textContent = "";
-      if (!assetID) {
-        errorDiv.textContent = "Asset ID is required.";
+  <script>
+    async function submitForm() {
+      const assetId = document.getElementById("assetId").value.trim();
+      const loader = document.getElementById("loader");
+      const message = document.getElementById("message");
+      const result = document.getElementById("result");
+
+      if (!assetId) {
+        message.textContent = "Please enter an Asset ID.";
         return;
       }
 
-      const date = formatDateLocal();
-      const data = {
-        asset: assetID,
-        date: date
-      };
-      console.log("Sending to Flow:", data);
-      loading.style.display = "block";
+      loader.style.display = "block";
+      message.textContent = "";
+      result.innerHTML = "";
 
-      fetch("https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      })
-      .then(res => {
-        loading.style.display = "none";
-        if (!res.ok) {
-          throw new Error("Flow call failed");
+      const today = new Date().toISOString().split("T")[0];
+      const payload = {
+        searchTerm: assetId,
+        date: today
+      };
+
+      try {
+        const response = await fetch("https://prod-36.australiasoutheast.logic.azure.com:443/workflows/0080ba3850764f069ed9ff534931a7c7/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5C0FlyHgG6ncn0AGZ_ChVWL8iSXFcuC9d-inq54p8LM", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.text();
+        loader.style.display = "none";
+
+        if (response.ok && data) {
+          message.textContent = "Prestart data retrieved successfully.";
+          result.innerHTML = data + '<br/><a class="prestart-button" href="https://tasmea.jotform.com/jotforms/light-vehicle-prestart-form" target="_blank">Open Prestart Form</a>';
+        } else {
+          message.textContent = "No response data available.";
         }
-        return res.json();
-      })
-      .then(result => {
-        console.log("Flow result:", result);
-        alert("Lookup complete. Check console or extend logic to display results.");
-      })
-      .catch(err => {
-        loading.style.display = "none";
-        errorDiv.textContent = "Error fetching data. Please try again.";
-        console.error("Fetch error:", err);
-      });
+
+      } catch (err) {
+        loader.style.display = "none";
+        message.textContent = "Error fetching data.";
+        console.error(err);
+      }
     }
   </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const table = document.querySelector("#resultsTable");
+    if (!table) return;
+
+    let faultCount = 0;
+
+    // Loop over each row (except the heading row)
+    const rows = table.querySelectorAll("tr.data-row");
+    rows.forEach(row => {
+        const valueCell = row.querySelector("td:nth-child(2)");
+        if (valueCell) {
+            const value = valueCell.textContent.trim().toLowerCase();
+            if (value === "no faults found" || value === "ok" || value === "yes") {
+                valueCell.style.backgroundColor = "#e6f4ea";  // Light green
+            } else {
+                valueCell.style.backgroundColor = "#fce8e6";  // Light red
+                faultCount++;
+            }
+        }
+    });
+
+    // Insert fault count into page
+    const faultSummary = document.getElementById("faultSummary");
+    if (faultSummary) {
+        faultSummary.textContent = `Total Faults Detected: ${faultCount}`;
+    }
+});
+</script>
+
 </body>
 </html>
