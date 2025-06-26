@@ -106,7 +106,7 @@
 </head>
 <body>
   <div class="container">
-    <img src="TASMEA_logo.png" alt="Company Logo" class="logo" />
+    <img src="TRA_logo.png" alt="Company Logo" class="logo" />
     <h2>Asset Prestart Lookup</h2>
     <input type="text" id="assetId" placeholder="Enter Asset ID" />
     <button onclick="submitForm()">Submit</button>
@@ -192,6 +192,19 @@ document.addEventListener("DOMContentLoaded", function () {
         faultSummary.textContent = `Total Faults Detected: ${faultCount}`;
     }
 });
+</script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const assetIdFromUrl = params.get("assetID");
+    if (assetIdFromUrl) {
+      const input = document.getElementById("assetId");
+      input.value = assetIdFromUrl;
+      
+    }
+  });
 </script>
 
 </body>
