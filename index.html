@@ -1,185 +1,231 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Asset Prestart Lookup</title>
+  <meta charset="UTF-8">
+  <title>Vehicle Prestart Lookup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f4f7fa;
+      background: #f0f2f5;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       margin: 0;
-      padding: 0;
+      padding: 20px;
     }
-    .container {
-      max-width: 750px;
-      margin: 60px auto;
-      background: #ffffff;
-      padding: 40px;
+    .container, .summary {
+      background: white;
+      padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    }
-    .logo {
-      display: block;
-      margin: 0 auto 20px;
-      max-height: 80px;
-    }
-    h2 {
-      margin-top: 0;
-      color: #003366;
-      text-align: center;
-    }
-    input[type="text"] {
       width: 100%;
-      padding: 14px;
-      margin-bottom: 20px;
+      max-width: 600px;
+      margin-top: 1rem;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      margin-top: 0;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
+      font-size: 1rem;
+      box-sizing: border-box;
     }
     button {
-      padding: 12px 22px;
-      background: #007b8f;
+      background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 8px;
       cursor: pointer;
-      font-size: 16px;
     }
-    button:hover {
-      background: #005f6b;
-    }
-    #loader {
-      display: none;
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #007b8f;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .message {
-      margin-top: 20px;
-      font-weight: 500;
-      color: #003366;
-    }
-    .response-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 24px;
-    }
-    .response-table th {
-      background-color: #d1e7f0;
-      text-align: left;
-      padding: 10px;
-    }
-    .response-table td {
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-    .response-table td.label-cell {
-      background-color: #f1f9fc;
+    .highlight {
+      color: red;
       font-weight: bold;
     }
-    .response-table td.value-cell {
-      background-color: #ffffff;
+    table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: collapse;
     }
-    .prestart-button {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 20px;
-      background-color: #28a745;
-      color: white;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 16px;
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
     }
-    .prestart-button:hover {
-      background-color: #218838;
+    th {
+      background: #eee;
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.75em;
+      color: #888;
+      text-align: center;
+      max-width: 600px;
+    }
+    img.logo {
+      width: 80px;
+      margin: 1rem 0;
+    }
+    @media screen and (max-width: 600px) {
+      .container, .summary {
+        padding: 1rem;
+      }
+      input, button {
+        font-size: 1rem;
+        padding: 0.6rem;
+      }
+      h1, h2 {
+        font-size: 1.25rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="TRA_logo.png" alt="Company Logo" class="logo" />
-    <h2>Asset Prestart Lookup</h2>
-    <input type="text" id="assetId" placeholder="Enter Asset ID" />
-    <button onclick="submitForm()">Submit</button>
-    <div id="loader"></div>
-    <div id="message" class="message"></div>
-    <div id="result"></div>
+  <img src="TRA_logo.png" alt="Logo" class="logo">
+  <div class="container" id="lookupForm">
+    <h1>Vehicle Prestart Lookup</h1>
+    <input type="text" id="assetId" placeholder="Enter Asset ID" required>
+    <button onclick="checkPrestart()">Submit</button>
+    <div id="error" class="highlight"></div>
   </div>
 
+  <div class="summary" id="summarySection" style="display:none">
+    <h2>Prestart Summary</h2>
+    <p><strong>Asset ID:</strong> <span id="asset"></span></p>
+    <p><strong>Site:</strong> <span id="site"></span></p>
+    <p><strong>Job Number:</strong> <span id="job"></span></p>
+    <p><strong>Last Prestart:</strong> <span id="dateSummary"></span></p>
+
+    <table>
+      <thead>
+        <tr><th>Check Item</th><th>Status</th></tr>
+      </thead>
+      <tbody id="faultsTable"></tbody>
+    </table>
+
+    <a id="link" href="#" target="_blank"><button>Fill Today’s Prestart</button></a>
+  </div>
+
+  <footer>
+    Powered by Tasman Rope Access · v1.4.0.4 · 2025
+  </footer>
+
   <script>
-    async function submitForm() {
-      const assetId = document.getElementById("assetId").value.trim();
-      const loader = document.getElementById("loader");
-      const message = document.getElementById("message");
-      const result = document.getElementById("result");
 
-      if (!assetId) {
-        message.textContent = "Please enter an Asset ID.";
-        return;
-      }
-
-      loader.style.display = "block";
-      message.textContent = "";
-      result.innerHTML = "";
-
-      const today = new Date().toISOString().split("T")[0];
-      const payload = {
-        searchTerm: assetId,
-        date: today
-      };
-
-      try {
-        const response = await fetch("https://prod-36.australiasoutheast.logic.azure.com:443/workflows/0080ba3850764f069ed9ff534931a7c7/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5C0FlyHgG6ncn0AGZ_ChVWL8iSXFcuC9d-inq54p8LM", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.text();
-        loader.style.display = "none";
-
-        if (response.ok && data) {
-          message.textContent = "Prestart data retrieved successfully.";
-          result.innerHTML = data + '<br/><a class="prestart-button" href="https://tasmea.jotform.com/jotforms/light-vehicle-prestart-form" target="_blank">Open Prestart Form</a>';
-        } else {
-          message.textContent = "No response data available.";
-        }
-
-      } catch (err) {
-        loader.style.display = "none";
-        message.textContent = "Error fetching data.";
-        console.error(err);
-      }
-    }
-  </script>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const params = new URLSearchParams(window.location.search);
-    // Support both the new 'tasmanVehicle' key and the legacy 'assetID'
-    const assetIdFromUrl = params.get("tasmanVehicle") || params.get("assetID");
-    if (assetIdFromUrl) {
-      const input = document.getElementById("assetId");
-      if (input) {
-        input.value = assetIdFromUrl;
-        // Auto-start the lookup
-        if (typeof submitForm === "function") {
+    // Auto-fill from URL (?tasmanVehicle= or ?assetID=) and auto-start
+    document.addEventListener('DOMContentLoaded', function () {
+      const params = new URLSearchParams(window.location.search);
+      const prefill = params.get('tasmanVehicle') || params.get('assetID') || '';
+      const input = document.getElementById('assetId');
+      if (input && prefill) {
+        input.value = prefill;
+        if (typeof checkPrestart === 'function') {
+          checkPrestart();
+        } else if (typeof submitForm === 'function') {
           submitForm();
         }
       }
+    });
+    
+    const query = new URLSearchParams(window.location.search);
+    const lookupDateEl = document.getElementById('lookupDate');
+    const date = lookupDateEl ? lookupDateEl.value : '';
+    const prefillAsset = query.get('assetID') || '';
+    document.getElementById('assetId').value = prefillAsset;
+
+    const endpoint = "https://prod-59.australiasoutheast.logic.azure.com:443/workflows/dd468122d5934c8ba3b83e9fd2b66f0f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xeOMxkv2Yq5zo7RJiMrkq6Nx0RKjhX3MQwb95hsaTWU";
+
+    function checkPrestart() {
+      const asset = document.getElementById('assetId').value.trim();
+      const errorBox = document.getElementById('error');
+      const summary = document.getElementById('summarySection');
+
+      if (!asset) {
+        errorBox.textContent = "Please enter Asset ID.";
+        return;
+      }
+
+      errorBox.textContent = "";
+      showSpinner(true);
+
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetID: asset })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showSpinner(false);
+        document.getElementById('lookupForm').style.display = 'none';
+        summary.style.display = 'block';
+
+        document.getElementById('asset').textContent = asset;
+        document.getElementById('site').textContent = data.site || '-';
+        document.getElementById('job').textContent = data.job || '-';
+        document.getElementById('dateSummary').textContent = data.lastPrestart ? `${data.lastPrestart.date} with ${data.lastPrestart.faults} fault(s)` : '-';
+        document.getElementById('link').href = data.prestartFormLink || '#';
+
+        const checks = ["brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"];
+        const labels = {
+          brakes: "Brakes", lights: "Lights", horn: "Horn", tyres: "Tyres",
+          engine: "Engine Leaks", interior: "Interior", radio: "2-Way Radio",
+          safety: "Safety Equipment", windscreen: "Windscreen", docs: "Documentation"
+        };
+
+        const faultTable = document.getElementById('faultsTable');
+        faultTable.innerHTML = '';
+        if (data.checks) {
+          checks.forEach(key => {
+            if (key in data.checks) {
+              const val = data.checks[key];
+              const lower = val.toLowerCase();
+              const row = document.createElement('tr');
+              row.innerHTML = `<td>${labels[key]}</td><td>${val}</td>`;
+              if (["fault", "worn", "crack", "leak", "missing"].some(term => lower.includes(term))) {
+                row.children[1].style.color = "#d00000";
+                row.children[1].style.fontWeight = "bold";
+              }
+              faultTable.appendChild(row);
+            }
+          });
+        } else {
+          faultTable.innerHTML = '<tr><td colspan="2">No check data available.</td></tr>';
+        }
+      })
+      .catch(err => {
+        showSpinner(false);
+        errorBox.textContent = "Error fetching data. Please try again.";
+        console.error(err);
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = "Retry";
+        retryBtn.onclick = () => {
+          errorBox.textContent = "";
+          checkPrestart();
+        };
+        errorBox.appendChild(document.createElement("br"));
+        errorBox.appendChild(retryBtn);
+      });
     }
-  });
-</script>
+
+    function showSpinner(show) {
+      if (show) {
+        document.body.insertAdjacentHTML('beforeend', '<div id="spinner" style="position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(255,255,255,0.8);z-index:9999;display:flex;justify-content:center;align-items:center;"><div style="border:6px solid #f3f3f3;border-top:6px solid #007bff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div></div>');
+      } else {
+        const spinner = document.getElementById('spinner');
+        if (spinner) spinner.remove();
+      }
+    }
+
+    const style = document.createElement('style');
+    style.innerHTML = "@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}";
+    document.head.appendChild(style);
+
+    if (prefillAsset) {
+      checkPrestart();
+    }
+  </script>
 </body>
 </html>
