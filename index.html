@@ -165,47 +165,21 @@
   </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const table = document.querySelector("#resultsTable");
-    if (!table) return;
-
-    let faultCount = 0;
-
-    // Loop over each row (except the heading row)
-    const rows = table.querySelectorAll("tr.data-row");
-    rows.forEach(row => {
-        const valueCell = row.querySelector("td:nth-child(2)");
-        if (valueCell) {
-            const value = valueCell.textContent.trim().toLowerCase();
-            if (value === "no faults found" || value === "ok" || value === "yes") {
-                valueCell.style.backgroundColor = "#e6f4ea";  // Light green
-            } else {
-                valueCell.style.backgroundColor = "#fce8e6";  // Light red
-                faultCount++;
-            }
-        }
-    });
-
-    // Insert fault count into page
-    const faultSummary = document.getElementById("faultSummary");
-    if (faultSummary) {
-        faultSummary.textContent = `Total Faults Detected: ${faultCount}`;
-    }
-});
-</script>
-
-
-<script>
   document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams(window.location.search);
-    const assetIdFromUrl = params.get("assetID");
+    // Support both the new 'tasmanVehicle' key and the legacy 'assetID'
+    const assetIdFromUrl = params.get("tasmanVehicle") || params.get("assetID");
     if (assetIdFromUrl) {
       const input = document.getElementById("assetId");
-      input.value = assetIdFromUrl;
-      
+      if (input) {
+        input.value = assetIdFromUrl;
+        // Auto-start the lookup
+        if (typeof submitForm === "function") {
+          submitForm();
+        }
+      }
     }
   });
 </script>
-
 </body>
 </html>
