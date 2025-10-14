@@ -166,7 +166,8 @@
         document.getElementById('site').textContent = data.site || '-';
         document.getElementById('job').textContent = data.job || '-';
         document.getElementById('dateSummary').textContent = data.lastPrestart ? `${data.lastPrestart.date} with ${data.lastPrestart.faults} fault(s)` : '-';
-        document.getElementById('link').href = data.prestartFormLink || '#';
+        document.getElementById('link').href ="https://tasmea.jotform.com/250893419076970?assetID=" + encodeURIComponent(asset);
+
 
         const checks = ["brakes", "lights", "horn", "tyres", "engine", "interior", "radio", "safety", "windscreen", "docs"];
         const labels = {
